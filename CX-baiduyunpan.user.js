@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         CX-百度云盘
 // @namespace    https://github.com/lihaoyun6/cx-baiduyunpan
-// @version      0.1.3
+// @version      0.1.6
 // @description  百度网盘文件直链提取, 支持一键发送至Aria2进行下载
 // @author       lihaoyun6
 // @license      MIT
 // @supportURL   https://github.com/lihaoyun6/cx-baiduyunpan/issues
 // @date         01/01/2018
-// @modified     04/04/2018
+// @modified     05/06/2018
 // @match        *://pan.baidu.com/disk/home*
 // @match        *://yun.baidu.com/disk/home*
 // @match        *://pan.baidu.com/s/*
@@ -23,6 +23,7 @@
 // @grant        GM_xmlhttpRequest
 // @require      https://cdn.bootcss.com/jquery/1.7.1/jquery.min.js
 // @require      https://cdn.bootcss.com/clipboard.js/1.5.16/clipboard.min.js
+// @icon         https://www.baidu.com/favicon.ico
 // ==/UserScript==
 
 (function(require, define, Promise) {
@@ -90,8 +91,13 @@
 				output = parts[1];
 			}
 			var ids = Math.round(Math.random()*10000000);
+            var token = window.localStorage ? localStorage.getItem("token") : Cookie.read("token");
+			if (!token) {
+				var token = "no";
+			}
 			var options = {
 				params: [
+                    "token:"+token+"",
 					[
 						url
 					],
@@ -231,7 +237,11 @@
 				if (!aria2rpc) {
 					var aria2rpc = "jsonrpc";
 				}
-				var text = '<label for="txt">Aria2服务器地址: </label><input type="text" id="aria2addr" style="white-space: nowrap;" value="' + aria2addr + '" /><br><br><label for="txt">Aria2服务器端口: </label><input type="text" id="aria2port" style="white-space: nowrap;" value="' + aria2port + '" /><br><br><label for="txt">Aria2-RPC接口名: </label><input type="text" id="aria2rpc" style="white-space: nowrap;" value="' + aria2rpc + '" />';
+				var token = window.localStorage ? localStorage.getItem("token") : Cookie.read("token");
+				if (!token) {
+					var token = "无";
+				}
+				var text = '<label for="txt">Aria2服务器地址: </label><input type="text" id="aria2addr" style="white-space: nowrap;" value="' + aria2addr + '" /><br><br><label for="txt">Aria2服务器端口: </label><input type="text" id="aria2port" style="white-space: nowrap;" value="' + aria2port + '" /><br><br><label for="txt">Aria2-RPC接口名: </label><input type="text" id="aria2rpc" style="white-space: nowrap;" value="' + aria2rpc + '" /><br><br><label for="txt">Aria2-RPC密钥串: </label><input type="text" id="token" style="white-space: nowrap;" value="' + token + '" />';
 				var dialog = ctx.ui.confirm({
 					title: '下载设置',
 					body: text,
@@ -242,7 +252,7 @@
 				});
 				//alert(urls);
 				dialog.buttonIns[0].dom.attr({
-					'href': 'javascript:var aria2addr = document.getElementById("aria2addr").value;var aria2port = document.getElementById("aria2port").value;var aria2rpc = document.getElementById("aria2rpc").value;if (window.localStorage) {localStorage.setItem("aria2addr", aria2addr);localStorage.setItem("aria2port", aria2port);localStorage.setItem("aria2rpc", aria2rpc);} else {Cookie.write("aria2addr", aria2addr);Cookie.write("aria2port", aria2port);Cookie.write("aria2rpc", aria2rpc);};',
+					'href': 'javascript:var aria2addr = document.getElementById("aria2addr").value;var aria2port = document.getElementById("aria2port").value;var aria2rpc = document.getElementById("aria2rpc").value;var token = document.getElementById("token").value;if (window.localStorage) {localStorage.setItem("aria2addr", aria2addr);localStorage.setItem("aria2port", aria2port);localStorage.setItem("aria2rpc", aria2rpc);localStorage.setItem("token", token);} else {Cookie.write("aria2addr", aria2addr);Cookie.write("aria2port", aria2port);Cookie.write("aria2rpc", aria2rpc);Cookie.write("token", token);};',
 					'data-clipboard-action': 'copy',
 					'data-clipboard-target': '#aria2addr'
 				}).addClass('btn').off();
@@ -485,10 +495,11 @@
 			$(unsafeWindow).on('load', function() {
 				reject('downloadManager.js');
 			});
-			require.async(prefix + 'download/service/downloadManager.js', function(dm) {
+			resolve();
+			/*require.async(prefix + 'download/service/downloadManager.js', function(dm) {
 				dm.MODE_PRE_INSTALL = dm.MODE_PRE_DOWNLOAD;
 				resolve();
-			});
+			});*/
 		});
 		var gjcPromise = new Promise(function(resolve, reject) {
 			$(unsafeWindow).on('load', function() {
@@ -507,7 +518,8 @@
 			$(unsafeWindow).on('load', function() {
 				reject('downloadDirectService.js');
 			});
-			require.async(prefix + 'download/service/downloadDirectService.js', function(dDS) {
+			resolve();
+			/*require.async(prefix + 'download/service/downloadDirectService.js', function(dDS) {
 				var $preDlFrame = null;
 				var _ = dDS.straightforwardDownload;
 				if (typeof _ !== 'function') return;
@@ -524,7 +536,7 @@
 					_.apply(dDS, arguments);
 				};
 				resolve();
-			});
+			});*/
 		});
 		Promise.all([dmPromise, gjcPromise, ddsPromise]).then(function() {
 			try {
